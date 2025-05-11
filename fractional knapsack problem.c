@@ -4,6 +4,7 @@
 // Structure to store item details
 struct Item {
     double value, weight;
+    int index; // original index of item for display
 };
 
 // Comparator function to sort items by decreasing value/weight ratio
@@ -15,24 +16,33 @@ int compare(const void* a, const void* b) {
 
 // Function to compute maximum value for fractional knapsack
 double fractionalKnapsack(double capacity, struct Item items[], int n) {
-    // Sort items by value/weight ratio
     qsort(items, n, sizeof(struct Item), compare);
 
-    double totalValue = 0.0; // Resultant value
+    double totalValue = 0.0;
+    printf("\nItems selected into knapsack:\n");
+    printf("---------------------------------------------------\n");
+    printf("| %-8s | %-10s | %-10s | %-9s |\n", "Item No", "Weight Taken", "Value Gained", "Fraction");
+    printf("---------------------------------------------------\n");
 	int i;
     for (i = 0; i < n; i++) {
-        // If full item can be added
+        if (capacity <= 0) break;
+
         if (items[i].weight <= capacity) {
             capacity -= items[i].weight;
             totalValue += items[i].value;
-        } 
-        // If only a fraction of item can be added
-        else {
-            totalValue += items[i].value * (capacity / items[i].weight);
-            break; // Knapsack is full
+            printf("| %-8d | %-10.2lf | %-10.2lf | %-9.2lf |\n", 
+                   items[i].index + 1, items[i].weight, items[i].value, 1.0);
+        } else {
+            double fraction = capacity / items[i].weight;
+            double takenValue = items[i].value * fraction;
+            totalValue += takenValue;
+            printf("| %-8d | %-10.2lf | %-10.2lf | %-9.2lf |\n", 
+                   items[i].index + 1, capacity, takenValue, fraction);
+            capacity = 0; // Knapsack is full
         }
     }
 
+    printf("---------------------------------------------------\n");
     return totalValue;
 }
 
@@ -40,34 +50,56 @@ int main() {
     int n;
     double capacity;
 
-    // Input: Number of items
-    printf("Enter number of items: ");
-    scanf("%d", &n);
+    printf("=== Fractional Knapsack Problem ===\n");
 
-    // Dynamic memory allocation for items
-    struct Item* items = (struct Item*)malloc(n * sizeof(struct Item));
-
-    // Input: Values and Weights
-    printf("Enter value and weight for each item:\n");
-    int i;
-    for (i = 0; i < n; i++) {
-        printf("Item %d - Value: ", i + 1);
-        scanf("%lf", &items[i].value);
-        printf("Item %d - Weight: ", i + 1);
-        scanf("%lf", &items[i].weight);
+    // Input number of items
+    printf("Enter the number of items: ");
+    if (scanf("%d", &n) != 1 || n <= 0) {
+        printf("Invalid input! Number of items must be a positive integer.\n");
+        return 1;
     }
 
-    // Input: Maximum capacity of knapsack
-    printf("Enter capacity of knapsack: ");
-    scanf("%lf", &capacity);
+    // Allocate memory
+    struct Item* items = (struct Item*)malloc(n * sizeof(struct Item));
+    if (items == NULL) {
+        printf("Memory allocation failed.\n");
+        return 1;
+    }
 
-    // Call function and display result
+    // Input item values and weights
+    int i;
+    for (i = 0; i < n; i++) {
+        printf("\nItem %d:\n", i + 1);
+        printf("  Enter value: ");
+        if (scanf("%lf", &items[i].value) != 1 || items[i].value < 0) {
+            printf("  Invalid input for value.\n");
+            free(items);
+            return 1;
+        }
+
+        printf("  Enter weight: ");
+        if (scanf("%lf", &items[i].weight) != 1 || items[i].weight <= 0) {
+            printf("  Invalid input for weight.\n");
+            free(items);
+            return 1;
+        }
+
+        items[i].index = i; // Store original index
+    }
+
+    // Input knapsack capacity
+    printf("\nEnter the capacity of the knapsack: ");
+    if (scanf("%lf", &capacity) != 1 || capacity <= 0) {
+        printf("Invalid input! Capacity must be a positive number.\n");
+        free(items);
+        return 1;
+    }
+
+    // Compute and print the maximum value
     double maxValue = fractionalKnapsack(capacity, items, n);
-    printf("\nMaximum value that can be obtained = %.2lf\n", maxValue);
+    printf("\n>> Maximum value that can be obtained = %.2lf\n", maxValue);
 
-    // Free allocated memory
+    // Free memory
     free(items);
-
     return 0;
 }
-
